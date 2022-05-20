@@ -20,14 +20,47 @@ export default class App extends Component {
     const newTodos = [todoObj, ...todos]
     this.setState({ todos: newTodos })
   }
+  // 更新todo
+  updateTodo = (id, done) => {
+    const { todos } = this.state
+    const newTodos = todos.map(todoObj => {
+      if (todoObj.id === id) return { ...todoObj, done }
+      else return todoObj
+
+    })
+    this.setState({ todos: newTodos })
+  }
+  // 删除一个todo
+  deleteTodo = (id) => {
+    const { todos } = this.state
+    const newTodos = todos.filter(todoObj => {
+      return todoObj.id !== id
+    })
+    this.setState({ todos: newTodos })
+  }
+  // 全选/全不选事件
+  checkAll = (checked) => {
+    const { todos } = this.state
+    let newTodos
+    if (checked) {
+      newTodos = todos.map(todoObj => {
+        return { ...todoObj, done: true }
+      })
+    } else {
+      newTodos = todos.map(todoObj => {
+        return { ...todoObj, done: false }
+      })
+    }
+    this.setState({ todos: newTodos })
+  }
   render() {
     const { todos } = this.state
     return (
       <div className='todo-container'>
         <div className='todo-wrap'>
           <Header addTodo={this.addTodo} />
-          <List todos={todos} />
-          <Footer />
+          <List todos={todos} updateTodo={this.updateTodo} deleteTodo={this.deleteTodo} />
+          <Footer todos={todos} checkAll={this.checkAll} />
         </div>
       </div>
     )
