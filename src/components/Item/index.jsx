@@ -17,7 +17,6 @@ export default class index extends Component {
   // 勾选与取消勾选事件
   handleChecked = (id) => {
     return (event) => {
-      // console.log(id, event.target.checked)
       const { updateTodo } = this.props
       updateTodo(id, event.target.checked)
     }
