@@ -1,16 +1,16 @@
 import React, { Component } from 'react'
 import './index.css'
 export default class Footer extends Component {
-
   // 勾选/取消勾选
   handleCheck = (event) => {
     console.log(this.props)
-    // console.log(event.target.checked)
     this.props.checkAll(event.target.checked)
   }
-  // 清除事件
+  // 清除已完成
   handleClear = () => {
-
+    if (window.confirm('是否清除已完成的任务')) {
+      this.props.clearChecked()
+    }
   }
   render() {
     const { todos } = this.props
@@ -19,9 +19,9 @@ export default class Footer extends Component {
       return todoObj.done === true
     }).length
     return (
-      <div className="todo-footer">
+      <div className="todo-footer" style={{ display: total === 0 ? 'none' : 'block' }}>
         <label>
-          <input type="checkbox" onChange={this.handleCheck} />
+          <input type="checkbox" onChange={this.handleCheck} checked={doneCount === total ? true : false} />
         </label>
         <span>
           <span>已完成{doneCount}</span> / 全部{total}
@@ -31,3 +31,4 @@ export default class Footer extends Component {
     )
   }
 }
+// 开往银河的列车->带着时间去哪里

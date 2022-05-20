@@ -53,6 +53,14 @@ export default class App extends Component {
     }
     this.setState({ todos: newTodos })
   }
+  // 清除已完成
+  clearChecked = () => {
+    const { todos } = this.state
+    const checkedTodos = todos.filter(todoObj => {
+      return todoObj.done === false
+    })
+    this.setState({ todos: checkedTodos })
+  }
   render() {
     const { todos } = this.state
     return (
@@ -60,7 +68,7 @@ export default class App extends Component {
         <div className='todo-wrap'>
           <Header addTodo={this.addTodo} />
           <List todos={todos} updateTodo={this.updateTodo} deleteTodo={this.deleteTodo} />
-          <Footer todos={todos} checkAll={this.checkAll} />
+          <Footer todos={todos} checkAll={this.checkAll} clearChecked={this.clearChecked} />
         </div>
       </div>
     )
