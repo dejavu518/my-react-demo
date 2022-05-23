@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import './index.css'
-export default class index extends Component {
+export default class Item extends Component {
+  // 对传入props进行类型的限制
   static propTypes = {
     updateTodo: PropTypes.func.isRequired
   }
@@ -16,7 +17,9 @@ export default class index extends Component {
   }
   // 勾选与取消勾选事件
   handleChecked = (id) => {
+
     return (event) => {
+      console.log(this, 520)
       const { updateTodo } = this.props
       updateTodo(id, event.target.checked)
     }
