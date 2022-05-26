@@ -1,17 +1,15 @@
 import React, { Component } from 'react'
-import { Route, NavLink } from 'react-router-dom'
+import { Route, Link } from 'react-router-dom'
 import Home from './pages/Home'
 import About from './pages/About'
 import Header from './components/Header'
 export default class App extends Component {
   render() {
     return (
-      < div >
+      <div>
         <div className="row">
           <div className="col-xs-offset-2 col-xs-8">
-            <div className="page-header">
-              <Header />
-            </div>
+            <Header />
           </div>
         </div>
         <div className="row">
@@ -20,8 +18,10 @@ export default class App extends Component {
               {/* <a className="list-group-item active" href="./about.html">About</a>
               <a className="list-group-item" href="./home.html">Home</a> */}
               {/* 在React靠路由链接切换组件 */}
-              <NavLink className="list-group-item active" to="/about">About</NavLink>
-              <NavLink className="list-group-item" to="/home">Home</NavLink>
+
+              <Link className="list-group-item active" to="/about">About</Link>
+              <Link className="list-group-item" to="/home">Home</Link>
+
             </div>
           </div>
           <div className="col-xs-6">
