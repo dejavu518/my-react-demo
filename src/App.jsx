@@ -3,6 +3,7 @@ import { Route, NavLink } from 'react-router-dom'
 import Home from './pages/Home'
 import About from './pages/About'
 import Header from './components/Header'
+import MyNavLink from './components/MyNavLink'
 export default class App extends Component {
   render() {
     return (
@@ -20,8 +21,8 @@ export default class App extends Component {
               {/* <a className="list-group-item active" href="./about.html">About</a>
               <a className="list-group-item" href="./home.html">Home</a> */}
               {/* 在React靠路由链接切换组件 */}
-              <NavLink className="list-group-item active" to="/about">About</NavLink>
-              <NavLink className="list-group-item" to="/home">Home</NavLink>
+              <MyNavLink to="/about" className="list-group-item" children="About" />
+              <MyNavLink to="/home" className="list-group-item" children="Home" />
             </div>
           </div>
           <div className="col-xs-6">
