@@ -4,5 +4,11 @@ const { override, fixBabelImports } = require('customize-cra');
        libraryName: 'antd',
        libraryDirectory: 'es',
       style: 'css',
-    }),
+     }),
+  //  addLessLoader({
+  //       getOptions: {
+  //         javascriptEnabled: true,
+  //         modifyVars: { '@primary-color': 'orange' },
+  //       }
+  //    })
   );
