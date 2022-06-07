@@ -13,7 +13,7 @@ export const createDecrementAction = data => ({
 export const createIncrementAsyncAction = (data, time) => {
   return (() => {
     setTimeout((dispatch) => {
-      sdispatch(createIncrementAction(data))
+      dispatch(createIncrementAction(data))
     },time)
   })
 }
