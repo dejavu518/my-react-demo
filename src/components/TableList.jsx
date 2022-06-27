@@ -1,5 +1,11 @@
 import ImportFile from '@/components/ImportFile';
-import { getUserMgtUserList } from '@/services/swagger/user';
+import {
+  getUserMgtUserList,
+  batchChangeUserStatus,
+  batchDeleteUser,
+  batchRestoreUser,
+  exportUserInfo,
+} from '@/services/swagger/user';
 import { getUser } from '@/services/ant-design-pro/api';
 import { tabCount } from '@/services/ant-design-pro/demo';
 import { UnorderedListOutlined } from '@ant-design/icons';
@@ -7,7 +13,8 @@ import ProDescriptions from '@ant-design/pro-descriptions';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
 import { FooterToolbar } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
-import { Badge, Button, Drawer, Dropdown, Menu, Modal } from 'antd';
+import { Badge, Button, Drawer, Dropdown, Menu, message, Modal } from 'antd';
+import InvalidateConfirmModal from './InvalidateConfirmModal';
 import {
   useCallback,
   useEffect,
@@ -22,7 +29,6 @@ import { FormattedMessage, useIntl, useModel } from 'umi';
 const TableList = (props, ref) => {
   useImperativeHandle(ref, () => ({
     renderTable: (pagination, queryParam, activeKey) => {
-      console.log(queryParam, 88);
       function getUserStatus() {
         let user_status = 1;
         if (activeKey == 'tab1') {
@@ -32,6 +38,9 @@ const TableList = (props, ref) => {
           user_status = 0;
         }
         if (props.deletable) {
+          user_status = -1;
+        }
+        if (props.recycleBin) {
           user_status = -1;
         }
         return user_status;
@@ -99,53 +108,106 @@ const TableList = (props, ref) => {
   //批量状态改变
   /* status: 0 无效; 1 有效; -1 可删除 */
   function onBatchSetUserStatus(toStatus) {
-    if (toStatus == '0') {
-      //无效信息录入弹窗
-      setReasonModalVisible(true);
-      console.log(reasonModalVisible);
-      const reqData = {
-        sysrsc_no: 'TREE001',
-        menursc_no: 'TREE001_01',
-        handlersc_no: 'ACTION004',
-        user_status: 0,
-        user_invalidreason: '',
-      };
-
-      //TODO 以下注释部分应该会移动到 ./InvalidateConfirmModal.jsx中, 以完成用户录入无效原因后,点击确认弹出确认提示框.
-      // const invalidateConfirm = Modal.confirm({
-      //   title: 'Do you Want to delete these items?',
-      //   onOk: async function () {
-      //     const res = await batchSetStatus(reqData);
-      //     if (res.success) {
-      //       invalidateConfirm.destroy();
-      //     }
-      //   },
-      //   onCancel() {
-      //     console.log('Cancel');
-      //   },
-      // });
-    }
-    if (toStatus == '1') {
-      //确认框
-      const reqData = {
-        sysrsc_no: 'TREE001',
-        menursc_no: 'TREE001_01',
-        handlersc_no: 'ACTION005',
-        user_status: 1,
-        user_invalidreason: null,
-      };
-      const validateConfirm = Modal.confirm({
-        title: intl.formatMessage({
-          id: 'pages.usermanage.confirmValidate',
-          defaultMessage: 'Are you sure validate selected rows?',
-        }),
-        onOk: async function () {
-          const res = await batchSetStatus(reqData);
-          if (res.success) {
-            validateConfirm.destroy();
-          }
-        },
+    if (selectedRowsState.length < 2) {
+      const defaultLoginSuccessMessage = intl.formatMessage({
+        id: 'pages.usermanage.batch.tip',
+        defaultMessage: '批量操作数据至少选择2条',
       });
+      message.success(defaultLoginSuccessMessage);
+    } else {
+      let userArr = [];
+      userArr = selectedRowsState.map((i) => {
+        return "'" + i.User_GUID + "'";
+      });
+      // 批量无效
+      if (toStatus == '0') {
+        props.handleSelected(selectedRowsState);
+      }
+      // 批量有效
+      if (toStatus == '1') {
+        const reqData = {
+          sysrsc_no: 'TREE001',
+          menursc_no: 'TREE001_01',
+          handlersc_no: 'ACTION005',
+          user_status: 1,
+          user_invalidreason: '',
+          user_guid_str: userArr.toString(),
+        };
+        const validateConfirm = Modal.confirm({
+          title: intl.formatMessage({
+            id: 'pages.usermanage.confirmBatchValidate',
+            defaultMessage: 'Are you sure validate selected rows?',
+          }),
+          onOk: async function () {
+            const res = await batchChangeUserStatus(reqData);
+            if (res.success) {
+              const defaultLoginSuccessMessage = intl.formatMessage({
+                id: 'pages.usermanage.batchValidate.success',
+                defaultMessage: '批量有效成功！',
+              });
+              message.success(defaultLoginSuccessMessage);
+              validateConfirm.destroy();
+            }
+          },
+        });
+      }
+      // 批量删除
+      if (toStatus == '2') {
+        const reqData = {
+          sysrsc_no: 'TREE001',
+          menursc_no: 'TREE001_03',
+          handlersc_no: 'ACTION002',
+          user_guid_str:
+            "'49f11933-a1a7-459e-ad05-f22414d46bf9','904cd32c-55ac-4791-a8bc-a887e1146eb3'", //李四
+          user_guid: '',
+        };
+        const validateConfirm = Modal.confirm({
+          title: intl.formatMessage({
+            id: 'pages.usermanage.confirmBatchDelete',
+            defaultMessage: 'Are you sure batch delete selected rows?',
+          }),
+          onOk: async function () {
+            const res = await batchDeleteUser(reqData);
+            if (res.success) {
+              const defaultLoginSuccessMessage = intl.formatMessage({
+                id: 'pages.usermanage.batchDel.success',
+                defaultMessage: '批量删除成功！',
+              });
+              message.success(defaultLoginSuccessMessage);
+              validateConfirm.destroy();
+            }
+          },
+        });
+      }
+      // 批量恢复
+      if (toStatus == '3') {
+        const reqData = {
+          sysrsc_no: 'TREE299',
+          menursc_no: 'TREE299_01',
+          handlersc_no: 'BTN_001',
+          user_guid_str:
+            "'49f11933-a1a7-459e-ad05-f22414d46bf9','904cd32c-55ac-4791-a8bc-a887e1146eb3'", //李四
+          // user_guid_str: userArr.toString(),
+          user_guid: '',
+        };
+        const validateConfirm = Modal.confirm({
+          title: intl.formatMessage({
+            id: 'pages.usermanage.confirmBatchRestore',
+            defaultMessage: 'Are you sure restore selected rows?',
+          }),
+          onOk: async function () {
+            const res = await batchRestoreUser(reqData);
+            if (res.success) {
+              const defaultLoginSuccessMessage = intl.formatMessage({
+                id: 'pages.usermanage.batchRestore.success',
+                defaultMessage: '批量恢复成功！',
+              });
+              message.success(defaultLoginSuccessMessage);
+              validateConfirm.destroy();
+            }
+          },
+        });
+      }
     }
   }
 
@@ -155,8 +217,36 @@ const TableList = (props, ref) => {
     setImportModalVisible(() => true);
   }
   //导出
-  function onExportUsers() {
-    alert('clicked export users');
+  async function onExportUsers(status) {
+    const params = {
+      jsonData: {
+        currentwhere: [{ queryname: '', queryoperator: '', queryvalue: '' }],
+        sorting: 'user_guid',
+        sortdir: 'asc',
+        sheet_name_res: 'sheet名的资源',
+        no_res: '用户ID的资源',
+        name_res: '姓名的资源',
+        email_res: '邮箱资源',
+        type_res: '类型资源',
+        status_res: '状态资源',
+        user_status: status === 0 ? '1' : status === 1 ? '0' : status === 2 ? '-1' : '-2',
+      },
+    };
+    const res = await exportUserInfo(params);
+    if (res.success) {
+      // document.location.href = res.data;
+      const defaultLoginSuccessMessage = intl.formatMessage({
+        id: 'pages.usermanage.export.success',
+        defaultMessage: '导出成功！',
+      });
+      message.success(defaultLoginSuccessMessage);
+    } else {
+      const defaultLoginSuccessMessage = intl.formatMessage({
+        id: 'pages.usermanage.export.false',
+        defaultMessage: '导出失败！',
+      });
+      message.success(defaultLoginSuccessMessage);
+    }
   }
   const toolBarMoreMenu = () => {
     let items = [];
@@ -167,7 +257,7 @@ const TableList = (props, ref) => {
             label: (
               <a
                 onClick={() => {
-                  onBatchSetUserStatus(0);
+                  onBatchSetUserStatus(0); //批量无效
                 }}
               >
                 {intl.formatMessage({
@@ -188,19 +278,24 @@ const TableList = (props, ref) => {
           {
             key: 'export',
             label: (
-              <a onClick={onExportUsers}>
+              <a
+                onClick={() => {
+                  onExportUsers(0);
+                }}
+              >
                 {intl.formatMessage({ id: 'pages.export', defaultMessage: 'Export' })}
               </a>
             ),
           },
         ])
-      : (items = [
+      : activeKey == 'tab2'
+      ? (items = [
           {
-            key: 'validate',
+            key: 'valid',
             label: (
               <a
                 onClick={() => {
-                  onBatchSetUserStatus(1);
+                  onBatchSetUserStatus(1); //批量有效
                 }}
               >
                 {intl.formatMessage({
@@ -213,17 +308,81 @@ const TableList = (props, ref) => {
           {
             key: 'export',
             label: (
-              <a onClick={onExportUsers}>
+              <a
+                onClick={() => {
+                  onExportUsers(1);
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.export', defaultMessage: 'Export' })}
+              </a>
+            ),
+          },
+        ])
+      : props.deletable
+      ? (items = [
+          {
+            key: 'delete',
+            label: (
+              <a
+                onClick={() => {
+                  onBatchSetUserStatus(2); //批量删除
+                }}
+              >
+                {intl.formatMessage({
+                  id: 'pages.usermanage.del',
+                  defaultMessage: 'Batch Deletion',
+                })}
+              </a>
+            ),
+          },
+          {
+            key: 'export',
+            label: (
+              <a
+                onClick={() => {
+                  onExportUsers(2);
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.export', defaultMessage: 'Export' })}
+              </a>
+            ),
+          },
+        ])
+      : (items = [
+          {
+            key: 'restore',
+            label: (
+              <a
+                onClick={() => {
+                  onBatchSetUserStatus(3); //批量恢复
+                }}
+              >
+                {intl.formatMessage({
+                  id: 'pages.usermanage.batchRestore',
+                  defaultMessage: 'Batch Restore',
+                })}
+              </a>
+            ),
+          },
+          {
+            key: 'export',
+            label: (
+              <a
+                onClick={() => {
+                  onExportUsers(3);
+                }}
+              >
                 {intl.formatMessage({ id: 'pages.export', defaultMessage: 'Export' })}
               </a>
             ),
           },
         ]);
+
     return <Menu items={items} />;
   };
 
   const options = { setting: true, reload: false, density: false };
-  const toolbar = {
+  const toolbar1 = {
     menu: {
       type: 'tab', // inline | dropdown | tab
       activeKey: activeKey,
@@ -264,6 +423,13 @@ const TableList = (props, ref) => {
       </Dropdown>,
     ],
   };
+  const toolbar2 = {
+    actions: [
+      <Dropdown overlay={() => toolBarMoreMenu()} placement="bottomRight" arrow key="more">
+        <UnorderedListOutlined />
+      </Dropdown>,
+    ],
+  };
   const paginationChange = useCallback((pageInfo) => {
     setPagination(() => {
       return {
@@ -291,6 +457,9 @@ const TableList = (props, ref) => {
       }
       if (props.deletable) {
         user_status = -1;
+      }
+      if (props.recycleBin) {
+        user_status = -2;
       }
       return user_status;
     }
@@ -328,7 +497,24 @@ const TableList = (props, ref) => {
     //   });
     // });
   }
-
+  function onFinishInvalidateReason(close) {
+    if (close) {
+      setReasonModalVisible(false);
+    }
+  }
+  async function handleRemove(selectedRowsState) {
+    const reqData = {
+      sysrsc_no: 'TREE001',
+      menursc_no: 'TREE001_03',
+      handlersc_no: 'ACTION002',
+      user_guid_str:
+        "'49f11933-a1a7-459e-ad05-f22414d46bf9','904cd32c-55ac-4791-a8bc-a887e1146eb3'", //李四
+      user_guid: '',
+      user_status: '1',
+    };
+    const res = await batchDeleteUser(reqData);
+    console.log(res);
+  }
   useEffect(() => {
     renderTable(pagination, queryParam, activeKey);
   }, [pagination, queryParam, activeKey]);
@@ -337,7 +523,8 @@ const TableList = (props, ref) => {
     <div style={{ margin: `${LAYOUTMARGIN} -8px -8px` }}>
       <ProTable
         actionRef={actionRef}
-        rowKey="User_GUID"
+        // rowKey="User_GUID"
+        rowKey="key"
         search={false}
         dataSource={tableData}
         columns={columns}
@@ -350,7 +537,7 @@ const TableList = (props, ref) => {
           ...pagination,
           total: totalCount,
         }}
-        toolbar={props.deletable ? null : toolbar}
+        toolbar={props.deletable || props.recycleBin ? toolbar2 : toolbar1}
         options={options}
         columnsState={{
           persistenceType: 'localStorage',
