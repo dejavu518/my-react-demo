@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Descriptions, Rate, Avatar } from 'antd';
+import { Button, Descriptions, Rate, Avatar, List } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { useIntl } from 'umi';
 import './index.less';
@@ -9,6 +9,16 @@ const Index = () => {
   const menu_arr = [
     { key: 0, name: '基本信息' },
     { key: 1, name: '安全设置' },
+  ];
+  const listData = [
+    {
+      title: '登录密码',
+      tip: '密码必须由字母、数字、特殊字符组成，且长度必须大于8位',
+    },
+    {
+      title: '邮箱账号',
+      tip: '您已绑定了邮箱zhang.san@cims-medtech.com 【系统的一些重要信息将通告邮件告知，同时您可以直接用于登录、找回密码等】',
+    },
   ];
   return (
     <div style={{ display: 'flex' }}>
@@ -143,9 +153,31 @@ const Index = () => {
           </div>
         )}
         {currentIndex == 1 && (
-          <div style={{ padding: '30px 50px' }}>
-            <h3>安全设置</h3>
-            {/* <Rate /> */}
+          <div style={{ padding: '20px' }}>
+            <h3 style={{ fontWeight: 'bold' }}>安全设置</h3>
+            <div style={{ padding: '30px 50px' }}>
+              <div>当前密码等级：</div>
+              <List
+                style={{ marginTop: '50px' }}
+                itemLayout="horizontal"
+                dataSource={listData}
+                renderItem={(item) => (
+                  <List.Item>
+                    <List.Item.Meta title={item.title} description={item.tip} />
+                    <Button
+                      type="primary"
+                      style={{ width: '80px' }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        alert('修改' + item.title);
+                      }}
+                    >
+                      修改
+                    </Button>
+                  </List.Item>
+                )}
+              />
+            </div>
           </div>
         )}
       </div>
