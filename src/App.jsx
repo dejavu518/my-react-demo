@@ -1,6 +1,5 @@
 import 'antd/dist/antd.less'
 import React, { useMemo } from 'react'
-import ReactDOM from 'react-dom'
 import {
   Designer, //设计器根组件，主要用于下发上下文
   DesignerToolsWidget, //画板工具挂件
@@ -25,14 +24,14 @@ import {
   Shortcut,
   KeyCode,
 } from '@designable/core'
-import {
-  LogoWidget,
-  ActionsWidget,
-  PreviewWidget,
-  SchemaEditorWidget,
-  MarkupSchemaWidget,
-} from './widgets'
-import { saveSchema } from './service'
+// import {
+//   LogoWidget,
+//   ActionsWidget,
+//   PreviewWidget,
+//   SchemaEditorWidget,
+//   MarkupSchemaWidget,
+// } from './widgets'
+// import { saveSchema } from './service'
 import {
   Form,
   Field,
@@ -61,7 +60,7 @@ import {
   FormCollapse,
   FormLayout,
   FormGrid,
-} from '../src'
+} from 'antd'
 
 GlobalRegistry.registerDesignerLocales({
   'zh-CN': {
