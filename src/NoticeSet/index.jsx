@@ -3,14 +3,14 @@ import MySearchCondition from '@/components/MyTable/components/MySearchCondition
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { PageHeaderWrapper } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
-import { Badge, Checkbox, Col, Form, Input, Modal, Row, Tooltip, Drawer, Tabs, Select } from 'antd';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { Badge, Checkbox, Col, Form, Input, Modal, Row, Tabs, Tooltip } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useModel, history } from 'umi';
+import 'react-quill/dist/quill.snow.css';
+import { history, useModel, useIntl } from 'umi';
 import './index.less';
 const { TextArea } = Input;
 const UserTable = () => {
+  const intl = useIntl();
   const actionRef = useRef();
   const [editForm] = Form.useForm();
   const { TabPane } = Tabs;
@@ -22,8 +22,6 @@ const UserTable = () => {
   const [activeKey, setActiveKey] = useState('tab1');
   const [isModalEdit, setIsModalEdit] = useState(false);
   const [tableData, setTableData] = useState([]);
-  // const [drawerVisible, setDrawerVisible] = useState(false);
-  // const [drawerTitle, setDrawerTitle] = useState();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -43,13 +41,20 @@ const UserTable = () => {
   };
   const toolbar = {
     menu: {
-      type: 'tab', // inline | dropdown | tab
+      type: 'inline', // inline | dropdown | tab
       activeKey: activeKey,
       items: [
         {
           key: 'tab1',
           // label: <span>系统通过设置列表{renderBadge(2, activeKey === 'tab1')}</span>,
-          label: <span>系统通告设置列表</span>,
+          label: (
+            <span>
+              {intl.formatMessage({
+                id: 'pages.sysParams.notice.title',
+                defaultMessage: '系统通告设置列表',
+              })}
+            </span>
+          ),
         },
       ],
       onChange: (key) => {
@@ -74,7 +79,10 @@ const UserTable = () => {
     {
       title: (
         <>
-          ID
+          {intl.formatMessage({
+            id: 'pages.ID',
+            defaultMessage: 'ID',
+          })}
           <Tooltip placement="top" title="ID是唯一的key">
             <QuestionCircleOutlined style={{ marginLeft: 4 }} />
           </Tooltip>
@@ -82,37 +90,39 @@ const UserTable = () => {
       ),
       dataIndex: 'id',
       align: 'left',
+      width: '64px',
       render: (_) => <a>{_}</a>,
     },
     {
-      title: '触点',
+      title: intl.formatMessage({
+        id: 'pages.sysParams.notice.contact',
+        defaultMessage: '触点',
+      }),
       dataIndex: 'chu',
       align: 'left',
     },
     {
-      title: '默认方式',
-      dataIndex: 'deType',
-      align: 'left',
-      sorter: (a, b) => a.containers - b.containers,
-    },
-    {
-      title: '其他方式',
-      dataIndex: 'orType',
-      align: 'left',
-    },
-    {
-      title: '主题',
+      title: intl.formatMessage({
+        id: 'pages.subject',
+        defaultMessage: '主题',
+      }),
       dataIndex: 'title',
       align: 'left',
     },
     {
-      title: '详细说明',
+      title: intl.formatMessage({
+        id: 'pages.sysParams.notice.instruction',
+        defaultMessage: '详细说明',
+      }),
       dataIndex: 'talk',
       align: 'left',
     },
     {
-      title: '操作',
-      width: 180,
+      title: intl.formatMessage({
+        id: 'pages.operate',
+        defaultMessage: '操作',
+      }),
+      width: 200,
       key: 'option',
       valueType: 'option',
       render: (id, record) => [
@@ -125,7 +135,10 @@ const UserTable = () => {
           }}
           key="link"
         >
-          编辑
+          {intl.formatMessage({
+            id: 'pages.edit',
+            defaultMessage: '编辑',
+          })}
         </a>,
         <a
           key="link2"
@@ -136,9 +149,22 @@ const UserTable = () => {
             handleTemplate(record);
           }}
         >
-          模板
+          {intl.formatMessage({
+            id: 'pages.sysParams.notice.template',
+            defaultMessage: '模板',
+          })}
         </a>,
-        <a key="link3">日志</a>,
+        <a
+          key="link3"
+          onClick={() => {
+            history.push({ pathname: '/console/sys-params/log', query: { type: 'sysParams' } });
+          }}
+        >
+          {intl.formatMessage({
+            id: 'pages.log',
+            defaultMessage: '日志',
+          })}
+        </a>,
       ],
     },
   ];
@@ -225,7 +251,11 @@ const UserTable = () => {
         />
       </div>
       <Modal
-        title="系统通告编辑"
+        maskClosable={false}
+        title={intl.formatMessage({
+          id: 'pages.sysParams.notice.edit',
+          defaultMessage: '系统通告编辑',
+        })}
         destroyOnClose
         width={500}
         visible={isModalEdit}
@@ -261,12 +291,18 @@ const UserTable = () => {
                 <Row>
                   <Col span={12}>
                     <Checkbox value="system" style={{ lineHeight: '32px' }}>
-                      系统
+                      {intl.formatMessage({
+                        id: 'pages.system',
+                        defaultMessage: '系统',
+                      })}
                     </Checkbox>
                   </Col>
                   <Col span={12}>
                     <Checkbox value="note" style={{ lineHeight: '32px' }}>
-                      短信
+                      {intl.formatMessage({
+                        id: 'pages.sysParams.notice.message',
+                        defaultMessage: '短信',
+                      })}
                     </Checkbox>
                   </Col>
                 </Row>
@@ -274,18 +310,30 @@ const UserTable = () => {
             </Form.Item>
 
             <Form.Item
-              label="主题"
+              label={intl.formatMessage({
+                id: 'pages.subject',
+                defaultMessage: '主题',
+              })}
               name="password"
               rules={[
                 {
                   required: true,
-                  message: '请输入主题!',
+                  message: intl.formatMessage({
+                    id: 'pages.sysParams.notice.subject.tip',
+                    defaultMessage: '请输入主题',
+                  }),
                 },
               ]}
             >
               <Input placeholder="请输入" />
             </Form.Item>
-            <Form.Item label="详细说明" name="xiangxi">
+            <Form.Item
+              label={intl.formatMessage({
+                id: 'pages.sysParams.notice.instruction',
+                defaultMessage: '详细说明',
+              })}
+              name="xiangxi"
+            >
               <TextArea rows={4} />
             </Form.Item>
           </Form>
