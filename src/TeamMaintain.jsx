@@ -1,24 +1,12 @@
 // @人员管理-人员清单-团队维护
 import MySearchCondition from '@/components/MyTable/components/MySearchCondition';
-import { PageHeaderWrapper } from '@ant-design/pro-layout';
-import {
-  Space,
-  Dropdown,
-  Menu,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Checkbox,
-  message,
-  Transfer,
-  Tree,
-} from 'antd';
 import { DownOutlined } from '@ant-design/icons';
+import { PageHeaderWrapper } from '@ant-design/pro-layout';
+import { Button, Dropdown, Form, Input, Menu, message, Modal, Space, Table, Transfer } from 'antd';
 import { useRef, useState } from 'react';
-import { FormattedMessage, useIntl, Link } from 'umi';
+import { FormattedMessage, Link, useIntl } from 'umi';
 import TableList from '../../components/TableList';
-import { changeTeamStatus, saveTeam } from '@/services/swagger/eservice';
+import { changeTeamStatus, getTeamInfo, saveTeam } from '@/services/swagger/eservice';
 import { $ExportExcel } from '@/utils/common';
 const rangePickerProps = {
   showTime: false,
@@ -33,6 +21,7 @@ const Personnel = () => {
   const [addEditStatus, setAddEditStatus] = useState();
   const [isModalVisible, setModalVisible] = useState(false);
   const [addUserModal, setAddUserModal] = useState(false);
+  const [traceModal, setTraceModal] = useState(false);
   const onGetQueryParam = (params) => {
     setQueryParam(() => {
       return params;
@@ -42,8 +31,11 @@ const Personnel = () => {
   const HeaderExtra = (
     <>
       {/* 无效团队 */}
-      <Link to="/workbench/personnel-management/personnel-list/team-maintain/invalid-team">
-        无效团队
+      <Link to="/workbench1/personnel-management/personnel-list/team-maintain/invalid-team">
+        {intl.formatMessage({
+          id: 'pages.personnelManagement.invalidTeam',
+          defaultMessage: '无效团队',
+        })}
       </Link>
       {/* 新增团队 */}
       <Button
@@ -55,11 +47,13 @@ const Personnel = () => {
           setAddEditStatus('add');
         }}
       >
-        新增团队
+        {intl.formatMessage({
+          id: 'pages.personnelManagement.addTeam',
+          defaultMessage: '新增团队',
+        })}
       </Button>
     </>
   );
-  const checkOptions = ['工单类型A', '工单类型B', '工单类型C'];
   // ...菜单按钮
   const menu = (record) => {
     return (
@@ -70,12 +64,23 @@ const Personnel = () => {
             key: '1',
             label: (
               <span
-                onClick={() => {
-                  setAddUserModal(true);
+                onClick={(e) => {
+                  onDetail(record);
+                  e.preventDefault();
+                  setAddEditStatus('edit');
+                  setModalVisible(true);
+                  setCurrentRow(record);
+                  form.setFieldsValue({
+                    team_id: record.Team_No,
+                    team_name: record.Team_Name,
+                  });
                 }}
                 style={{ display: 'inline-block', width: '100%' }}
               >
-                添加用户
+                {intl.formatMessage({
+                  id: 'pages.edit',
+                  defaultMessage: '编辑',
+                })}
               </span>
             ),
           },
@@ -89,23 +94,24 @@ const Personnel = () => {
                 }}
                 style={{ display: 'inline-block', width: '100%' }}
               >
-                无效
+                {intl.formatMessage({ id: 'pages.usermanage.invalidate', defaultMessage: '无效' })}
               </span>
             ),
           },
-          // 日志
+          // 痕迹
           {
             key: '3',
             label: (
               <span
-                onClick={(e) => {
-                  e.preventDefault();
-                  console.log(record);
-                  onViewLog(record);
+                onClick={() => {
+                  setTraceModal(true);
                 }}
                 style={{ display: 'inline-block', width: '100%' }}
               >
-                <FormattedMessage id="pages.log" defaultMessage="日志" />
+                {intl.formatMessage({
+                  id: 'pages.personnelManagement.trace',
+                  defaultMessage: '痕迹',
+                })}
               </span>
             ),
           },
@@ -117,21 +123,14 @@ const Personnel = () => {
   const operateButtons = (_, record) => {
     return (
       <Space key={record.User_Guid}>
-        {/* 详情 */}
+        {/* 设置用户 */}
         <a
-          key="edit"
+          key="add"
           onClick={(e) => {
-            e.preventDefault();
-            setAddEditStatus('edit');
-            setModalVisible(true);
-            setCurrentRow(record);
-            form.setFieldsValue({
-              team_id: record.Team_No,
-              team_name: record.Team_Name,
-            });
+            setAddUserModal(true);
           }}
         >
-          编辑
+          设置用户
         </a>
         {/* 下拉菜单 */}
         <Dropdown key="more" placement="bottomRight" overlay={menu(record)}>
@@ -148,19 +147,28 @@ const Personnel = () => {
   // 表格列
   const tableColumns = [
     {
-      title: '团队ID',
+      title: intl.formatMessage({
+        id: 'pages.personnelManagement.teamID',
+        defaultMessage: '团队ID',
+      }),
       dataIndex: 'Team_No',
       sorter: true,
       valueType: 'text',
     },
     {
-      title: '团队名称',
+      title: intl.formatMessage({
+        id: 'pages.personnelManagement.teamName',
+        defaultMessage: '团队名称',
+      }),
       dataIndex: 'Team_Name',
       valueType: 'text',
     },
     {
-      title: '团队处理权限',
-      dataIndex: 'team_privilege',
+      title: intl.formatMessage({
+        id: 'pages.personnelManagement.userList',
+        defaultMessage: '用户清单',
+      }),
+      dataIndex: 'user_list',
       valueType: 'text',
     },
     {
@@ -172,21 +180,74 @@ const Personnel = () => {
       },
     },
   ];
+  const traceData = [
+    {
+      Team_Name: '团队名称1',
+      action: '开始',
+      time: '2022-07-28 16:00',
+      operator: '张三',
+    },
+    {
+      Team_Name: '团队名称2',
+      action: '移除',
+      time: '2022-07-28 16:00',
+      operator: '张三',
+    },
+    {
+      Team_Name: '团队名称3',
+      action: '开始',
+      time: '2022-07-28 16:00',
+      operator: '张三',
+    },
+  ];
+  // 痕迹表格列
+  const traceColumns = [
+    {
+      title: intl.formatMessage({
+        id: 'pages.personnelManagement.teamName',
+        defaultMessage: '团队名称',
+      }),
+      dataIndex: 'Team_Name',
+      valueType: 'text',
+      key: 'Team_Name',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.personnelManagement.action', defaultMessage: '动作' }),
+      dataIndex: 'action',
+      valueType: 'text',
+      key: 'action',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.time', defaultMessage: '时间' }),
+      dataIndex: 'time',
+      valueType: 'text',
+      key: 'time',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.operator', defaultMessage: '操作人' }),
+      dataIndex: 'operator',
+      valueType: 'text',
+      key: 'operator',
+    },
+  ];
   const checkChange = (v) => {
     console.log(v, 999999);
   };
   /**
    * 详情
    */
-  function onDetail(rowData) {
-    alert('clicked invalid, status' + JSON.stringify(rowData));
+  function onDetail(record) {
+    let param = {
+      team_guid: record.Team_GUID,
+    };
+    getTeamInfo(param).then((res) => {});
   }
   /**
    * 移除
    */
   function onRemove(record) {
     const confirm = Modal.confirm({
-      title: '提示',
+      title: intl.formatMessage({ id: 'pages.confirm.title', defaultMessage: '提示' }),
       content: (
         <div>
           <p>
@@ -284,7 +345,18 @@ const Personnel = () => {
       />
       <TableList queryParam={queryParam} columns={tableColumns} teamList={true} />
       <Modal
-        title={addEditStatus == 'add' ? '新增团队' : '编辑'}
+        maskClosable={false}
+        title={
+          addEditStatus == 'add'
+            ? intl.formatMessage({
+                id: 'pages.personnelManagement.addTeam',
+                defaultMessage: '新增团队',
+              })
+            : intl.formatMessage({
+                id: 'pages.personnelManagement.editTeam',
+                defaultMessage: '编辑团队',
+              })
+        }
         width={392}
         visible={isModalVisible}
         onOk={onSaveTeam}
@@ -295,43 +367,54 @@ const Personnel = () => {
       >
         <Form labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} form={form}>
           <Form.Item
-            label="团队ID"
+            label={intl.formatMessage({
+              id: 'pages.personnelManagement.teamID',
+              defaultMessage: '团队ID',
+            })}
             name="team_id"
-            rules={[{ required: true }]}
-            style={{ display: addEditStatus == 'add' ? 'none' : 'block' }}
           >
             <Input disabled />
           </Form.Item>
-          <Form.Item label="团队名称" name="team_name" rules={[{ required: true }]}>
-            <Input placeholder="请输入" />
-          </Form.Item>
-          <Form.Item label="团队处理权限" name="privilege" rules={[{ required: true }]}>
-            <div
-              style={{
-                border: '1px solid #f5f5f5',
-                height: '212px',
-                width: '100%',
-                padding: '10px 18px',
-              }}
-            >
-              <div style={{ width: '100%', marginBottom: '16px' }}>
-                <Checkbox.Group options={checkOptions} onChange={checkChange} />
-              </div>
-            </div>
+          <Form.Item
+            label={intl.formatMessage({
+              id: 'pages.personnelManagement.teamName',
+              defaultMessage: '团队名称',
+            })}
+            name="team_name"
+            rules={[{ required: true }]}
+          >
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'pages.usermanage.from.placeholder',
+                defaultMessage: '请输入',
+              })}
+            />
           </Form.Item>
         </Form>
       </Modal>
       {/* 添加用户弹框 */}
       <Modal
+        maskClosable={false}
         visible={addUserModal}
-        title="添加用户"
+        title={intl.formatMessage({
+          id: 'pages.personnelManagement.addUser',
+          defaultMessage: '添加用户',
+        })}
         onCancel={() => {
           setAddUserModal(false);
         }}
       >
         <Form labelCol={{ span: 24 }}>
-          <Form.Item label="用户选择" name="user_choose" rules={[{ required: true }]}>
+          <Form.Item
+            label={intl.formatMessage({
+              id: 'pages.personnelManagement.userChoose',
+              defaultMessage: '用户选择',
+            })}
+            name="user_choose"
+            rules={[{ required: true }]}
+          >
             <Transfer
+              showSearch
               dataSource={mockData}
               titles={['Source', 'Target']}
               targetKeys={targetKeys}
@@ -343,6 +426,21 @@ const Personnel = () => {
             />
           </Form.Item>
         </Form>
+      </Modal>
+      {/* 痕迹弹框 */}
+      <Modal
+        maskClosable={false}
+        title={intl.formatMessage({
+          id: 'pages.personnelManagement.trace',
+          defaultMessage: '痕迹',
+        })}
+        visible={traceModal}
+        width={938}
+        onCancel={() => {
+          setTraceModal(false);
+        }}
+      >
+        <Table dataSource={traceData} columns={traceColumns} />
       </Modal>
     </>
   );
