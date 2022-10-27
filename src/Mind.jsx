@@ -1,3 +1,11 @@
+/*
+ * @Author: dejavu518 cf_1118sab@163.com
+ * @Date: 2022-08-31 15:23:28
+ * @LastEditors: dejavu518 cf_1118sab@163.com
+ * @LastEditTime: 2022-10-24 16:55:22
+ * @FilePath: \my-react-demo\src\Mind.jsx
+ * @Description: 
+ */
 // 工单提醒@chenfang
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { PageHeaderWrapper } from '@ant-design/pro-layout';
@@ -84,7 +92,6 @@ const EditableCell = ({
 
   return <td {...restProps}>{childNode}</td>;
 };
-s;
 const RecentSetting = () => {
   const intl = useIntl();
   const [dataSource, setDataSource] = useState([

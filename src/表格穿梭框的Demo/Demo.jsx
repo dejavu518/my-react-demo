@@ -2,13 +2,16 @@
  * @Author: dejavu518 cf_1118sab@163.com
  * @Date: 2022-08-02 09:23:35
  * @LastEditors: dejavu518 cf_1118sab@163.com
- * @LastEditTime: 2022-09-28 15:08:01
+ * @LastEditTime: 2022-10-24 16:51:37
  * @FilePath: \my-react-demo\src\表格穿梭框的Demo\Demo.jsx
  * @Description:Demo
  */
+
+// 更新于10.24
 import { getPositionTree } from '@/services/swagger/eservice';
 import { PageContainer } from '@ant-design/pro-layout';
-import { Col, Descriptions, Row, Tabs, Transfer, Tree, Table } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
+import { Col, Descriptions, Row, Tabs, Transfer, Tree, Table, TreeSelect } from 'antd';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'umi';
 const isChecked = (selectedKeys, eventKey) => selectedKeys.includes(eventKey);
@@ -16,12 +19,11 @@ const isChecked = (selectedKeys, eventKey) => selectedKeys.includes(eventKey);
 const generateTree = (treeNodes = [], checkedKeys = []) =>
   treeNodes.map(({ children, ...props }) => ({
     ...props,
-    // disabled: checkedKeys.includes(props.key),
     disabled: checkedKeys.includes(props.id),
     children: generateTree(children, checkedKeys),
   }));
 
-const TreeTransfer = ({ rightColumns, dataSource, targetKeys, ...restProps }) => {
+const TreeTableTransfer = ({ rightColumns, dataSource, targetKeys, ...restProps }) => {
   console.log({ ...restProps }, 999);
   const transferDataSource = [];
   function flatten(list = []) {
@@ -103,7 +105,6 @@ const TreeTransfer = ({ rightColumns, dataSource, targetKeys, ...restProps }) =>
 const UserTable = () => {
   const intl = useIntl();
   const [positionTree, setPositionTree] = useState([]);
-
   useEffect(() => {
     let param = {
       team_guid: '',
@@ -162,7 +163,7 @@ const UserTable = () => {
     },
     {
       title: '参与团队',
-      dataIndex: 'Participle_Team',
+      dataIndex: 'team',
     },
   ];
   const [targetKeys, setTargetKeys] = useState([]);
@@ -214,7 +215,7 @@ const UserTable = () => {
                 />
               </Tabs.TabPane>
               <Tabs.TabPane tab="工单进度" key="2">
-                <TreeTransfer
+                <TreeTableTransfer
                   rightColumns={rightTableColumns}
                   dataSource={positionTree}
                   targetKeys={targetKeys}
