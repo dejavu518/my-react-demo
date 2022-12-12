@@ -2,8 +2,8 @@
  * @Author: dejavu518 cf_1118sab@163.com
  * @Date: 2022-09-28 17:28:59
  * @LastEditors: dejavu518 cf_1118sab@163.com
- * @LastEditTime: 2022-12-12 15:23:50
- * @FilePath: \my-react-demo\src\12.8创建通告.jsx
+ * @LastEditTime: 2022-12-12 15:20:26
+ * @FilePath: \my-react-demo\src\12.9新需求创建通告.jsx
  * @Description:创建通告/编辑通告
  */
 import { PageHeaderWrapper } from '@ant-design/pro-layout';
@@ -22,8 +22,13 @@ import {
   Modal,
   message,
 } from 'antd';
-import { QuestionCircleFilled, UploadOutlined } from '@ant-design/icons';
-import { getCommonUserList, uploadFileAsync } from '@/services/swagger/user';
+import {
+  QuestionCircleFilled,
+  UploadOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
+import { getCommonUserList, getUserInfo, uploadFileAsync } from '@/services/swagger/user';
 import { history, useIntl } from 'umi';
 import { useState, useRef, useEffect } from 'react';
 import ReactQuill from 'react-quill';
@@ -43,8 +48,10 @@ const AddNotice = (props) => {
   const [sendEmail, setSendEmail] = useState(0);
   const [sendSystem, setSendSystem] = useState(0);
   const [language, setLanguage] = useState({});
-  const [sendSusers, setSendSusers] = useState();
-  const [sendEusers, setSendEusers] = useState();
+  const [sendSusers, setSendSusers] = useState({});
+  const [sendWayType, setSendWayType] = useState({});
+  const [sendEusers, setSendEusers] = useState({});
+  const [objEmail, setObjEmail] = useState({});
   const { id } = props.location.query;
   const [emailShow, setEmailShow] = useState(false);
   const [systemShow, setSystemShow] = useState(false);
@@ -64,10 +71,23 @@ const AddNotice = (props) => {
   const quillEl = useRef(null);
   const [emailDocViewShow, setEmailDocViewShow] = useState(false);
   const [systemDocViewShow, setSystemDocViewShow] = useState(false);
-
   const [basicInfo, setBasicInfo] = useState({});
   const [emailChecked, setEmailChecked] = useState(false);
   const [systemChecked, setSystemChecked] = useState(false);
+  const [nameArea, setNameArea] = useState({});
+  const [systemList, setSystemList] = useState([]);
+  const [externalList, setExternalList] = useState([]);
+  const [sendTypeList, setSendTypeList] = useState([]);
+  const [tabSEmail, setTabSEmail] = useState({
+    data: [
+      {
+        type: '',
+        name: '',
+        email: '',
+      },
+    ],
+    count: 0,
+  });
   useEffect(() => {
     if (id) {
       let info = {
@@ -87,15 +107,14 @@ const AddNotice = (props) => {
           });
           // 解析系统/外部客户
           let systemUsersArr = [];
-          // systemUsersArr = dt.Send_SystemUsers.split(',').map((item) => {
-          //   return item.replace(/\'/g, '');
-          // });
+          systemUsersArr = dt.Send_SystemUsers.split(',').map((item) => {
+            return item.replace(/\'/g, '');
+          });
           let externalUsersArr = [];
           externalUsersArr = dt.Send_ExternalUsers.split(',').map((item) => {
             return item.replace(/\'/g, '');
           });
-          // setSendSusers(systemUsersArr);
-          setSendSusers(dt.Send_SystemUsers.split(','));
+          setSendSusers(systemUsersArr);
           setSendEusers(externalUsersArr);
           // 渲染内容
           if (dt.Email_Content !== null) {
@@ -185,7 +204,6 @@ const AddNotice = (props) => {
         }
       });
     } else {
-      console.log(typeof sendEusers);
     }
   }, []);
   /**
@@ -195,6 +213,7 @@ const AddNotice = (props) => {
     form
       .validateFields()
       .then((values) => {
+        console.log(sendEusers.length, 999);
         // 提示
         if (sendEmail === 0 && sendSystem === 0) {
           message.error('请选择发送方式');
@@ -347,6 +366,7 @@ const AddNotice = (props) => {
       <Button
         type="primary"
         onClick={() => {
+          console.log(sendEusers, sendSusers, objEmail, 6666);
           onPublish();
         }}
       >
@@ -354,18 +374,6 @@ const AddNotice = (props) => {
       </Button>
     </Space>
   );
-  const plainOptions = [
-    { label: '邮件', value: '1' },
-    { label: '系统', value: '2' },
-  ];
-  /**外部用户变化**/
-  const externalChange = (v) => {
-    setSendEusers(v);
-  };
-  /**系统用户变化**/
-  const systemChange = (v) => {
-    setSendSusers(v);
-  };
   /**语言变化**/
   const languageChange = (v) => {
     if (v.length > 0) {
@@ -385,56 +393,67 @@ const AddNotice = (props) => {
         setEnglishArea(true);
         setLanguage('zh-CN,en');
       }
-      // if (v.length === 2) {
-      //   setLanguage('zh-CN,en');
-      // } else {
-      //   setLanguage(v);
-      // }
     } else {
       setChineseArea(false);
       setEnglishArea(false);
     }
   };
-  const selectArea = (tabkey, record) => {
-    if (record.type === '外部客户') {
-      return (
-        <Select
-          value={sendEusers}
-          showArrow
-          bordered={false}
-          mode="tags"
-          style={{
-            width: '100%',
-          }}
-          placeholder={intl.formatMessage({
-            id: 'pages.notice.external.tip',
-            defaultMessage: '可输入外部客户邮箱',
-          })}
-          onChange={externalChange}
-        >
-          {externalUserList}
-        </Select>
-      );
-    } else if (record.type === '系统客户') {
-      return (
-        <Select
-          bordered={false}
-          mode="multiple"
-          showArrow
-          onChange={systemChange}
-          value={sendSusers}
-        >
-          {systemUserList.map((item) => {
+  const selectArea = (_, record, index) => {
+    console.log(nameArea, 595959);
+    return nameArea[index] === 'select' ? (
+      <Select
+        key={index}
+        bordered={false}
+        showArrow
+        onChange={(v) => {
+          let info = {
+            user_guid: v,
+          };
+          getUserInfo(info).then((res) => {
+            if (res.success) {
+              let dt = res.data[0];
+              setObjEmail(() => {
+                let obj = {};
+                obj[index] = dt.User_Email;
+                return {
+                  ...obj,
+                  ...sendSusers,
+                };
+              });
+            }
+          });
+        }}
+        // value={sendSusers[index]}
+      >
+        {systemUserList[index] &&
+          systemUserList[index].map((item) => {
             return (
               <Select.Option key={item.User_GUID} title={item.User_FullName} value={item.User_GUID}>
                 {item.User_FullName}
               </Select.Option>
             );
           })}
-          <Select.Option>无</Select.Option>
-        </Select>
-      );
-    }
+        <Select.Option>无</Select.Option>
+      </Select>
+    ) : nameArea[index] === 'input' ? (
+      <Input
+        bordered={false}
+        value={sendEusers[index]}
+        onBlur={(e) => {
+          let v = e.target.value;
+          setSendEusers(() => {
+            let obj = {};
+            obj[index] = v;
+            return {
+              ...obj,
+              ...sendEusers,
+            };
+          });
+        }}
+      />
+    ) : (
+      ''
+    );
   };
   const modules = {
     toolbar: {
@@ -470,23 +489,127 @@ const AddNotice = (props) => {
   const columns = [
     {
       title: intl.formatMessage({ id: 'pages.type', defaultMessage: '类型' }),
+      align: 'center',
       dataIndex: 'type',
       width: '200px',
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.notice.user', defaultMessage: '人员' }),
-      dataIndex: 'people',
-      render: function (_, record) {
-        return [selectArea(_, record)];
+      render: (_, record, index) => {
+        return (
+          <Select
+            bordered={false}
+            onChange={(v) => {
+              if (v === '1') {
+                setNameArea(() => {
+                  let obj = {};
+                  obj[index] = 'select';
+                  return {
+                    ...obj,
+                    ...nameArea,
+                  };
+                });
+                // setSystemList(() => {
+                //   let arr = [];
+                //   arr.push({ type: v });
+                //   return [...arr, systemList];
+                // });
+              } else {
+                setNameArea(() => {
+                  let obj = {};
+                  obj[index] = 'input';
+                  return {
+                    ...obj,
+                    ...nameArea,
+                  };
+                });
+              }
+            }}
+          >
+            {/* <Select.Option value="1">系统客户</Select.Option>
+            <Select.Option value="2">外部客户</Select.Option> */}
+            {sendTypeList[index].map((item) => {
+              return (
+                <Select.Option value={item.value} key={index}>
+                  {item.name}
+                </Select.Option>
+              );
+            })}
+          </Select>
+        );
       },
     },
-  ];
-  const tableData = [
     {
-      type: '系统客户',
+      title: intl.formatMessage({ id: 'pages.usermanage.name', defaultMessage: '姓名' }),
+      dataIndex: 'name',
+      align: 'center',
+      render: function (_, record, index) {
+        return [selectArea(_, record, index)];
+      },
     },
     {
-      type: '外部客户',
+      title: '邮箱',
+      align: 'center',
+      dataIndex: 'email',
+      width: 270,
+      render: function (_, record, index) {
+        return (
+          <Input
+            bordered={false}
+            value={objEmail[index]}
+            onBlur={(e) => {
+              let v = e.target.value;
+              setObjEmail(() => {
+                let obj = {};
+                obj[index] = v;
+                return {
+                  ...obj,
+                  ...objEmail,
+                };
+              });
+            }}
+          />
+        );
+      },
+    },
+    {
+      title: (
+        <PlusOutlined
+          onClick={() => {
+            setTabSEmail({
+              data: [
+                ...tabSEmail.data,
+                {
+                  key: tabSEmail.count,
+                  type: '',
+                  name: '',
+                  email: '',
+                },
+              ],
+              count: tabSEmail.count + 1,
+            });
+          }}
+          style={{ cursor: 'pointer', color: '#21bb7e' }}
+        />
+      ),
+      dataIndex: 'operation',
+      align: 'center',
+      width: '120px',
+      render: (_, record, index) =>
+        tabSEmail.data.length >= 1 && index !== 0 ? (
+          <DeleteOutlined
+            onClick={() => {
+              setTabSEmail(() => {
+                let arr = tabSEmail.data.filter((item) => item.key !== record.key);
+                arr.forEach((item, index) => {
+                  item.key = index;
+                });
+                return {
+                  data: arr,
+                  count: tabSEmail.data.length - 1,
+                };
+              });
+            }}
+            style={{ color: 'red' }}
+          />
+        ) : null,
     },
   ];
   const handleEmailChinese = (v) => {
@@ -586,8 +709,36 @@ const AddNotice = (props) => {
     };
     getCommonUserList(param).then((res) => {
       if (res.success) {
+        let dt = res.data;
+        let obj = {};
+        dt.forEach((item, index) => {
+          obj[index] = res.data;
+        });
         setSystemUserList(() => {
-          return res.data;
+          return {
+            ...obj,
+            ...systemUserList,
+          };
+        });
+        let sendType = [
+          {
+            value: '1',
+            name: '系统客户',
+          },
+          {
+            value: '2',
+            name: '外部客户',
+          },
+        ];
+        let obj2 = {};
+        dt.forEach((item, index) => {
+          obj2[index] = sendType;
+        });
+        setSendTypeList(() => {
+          return {
+            ...obj2,
+            ...sendTypeList,
+          };
         });
       }
     });
@@ -736,7 +887,7 @@ const AddNotice = (props) => {
               </>
             }
           >
-            <Table columns={columns} dataSource={tableData} pagination={false} bordered />
+            <Table columns={columns} pagination={false} dataSource={tabSEmail.data} bordered />
           </Form.Item>
           <Row gutter={32}>
             <Col span={10}>
