@@ -2,7 +2,7 @@
  * @Author: dejavu518 cf_1118sab@163.com
  * @Date: 2022-09-28 17:28:59
  * @LastEditors: dejavu518 cf_1118sab@163.com
- * @LastEditTime: 2022-12-12 15:20:26
+ * @LastEditTime: 2022-12-13 00:32:05
  * @FilePath: \my-react-demo\src\12.9新需求创建通告.jsx
  * @Description:创建通告/编辑通告
  */
@@ -399,7 +399,6 @@ const AddNotice = (props) => {
     }
   };
   const selectArea = (_, record, index) => {
-    console.log(nameArea, 595959);
     return nameArea[index] === 'select' ? (
       <Select
         key={index}
