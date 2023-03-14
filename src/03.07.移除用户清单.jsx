@@ -2,8 +2,8 @@
  * @Author: dejavu518 cf_1118sab@163.com
  * @Date: 2022-08-29 14:42:39
  * @LastEditors: dejavu518 cf_1118sab@163.com
- * @LastEditTime: 2023-03-07 14:55:27
- * @FilePath: \BM.Web.CIMS\src\pages\eService\personnelManagement\PersonnelList\RemovedList\index.jsx
+ * @LastEditTime: 2023-03-07 14:58:44
+ * @FilePath: \my-react-demo\src\03.07.移除用户清单.jsx
  * @Description:移除用户清单
  */
 // @人员管理-移除用户清单
