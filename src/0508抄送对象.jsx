@@ -2,7 +2,7 @@
  * @Author: liaoyh liaoyh@gl.com
  * @Date: 2022-11-02 10:10:13
  * @LastEditors: dejavu518 cf_1118sab@163.com
- * @LastEditTime: 2023-05-06 11:44:03
+ * @LastEditTime: 2023-05-08 09:29:46
  * @FilePath: \my-react-demo\src\0506抄送对象.jsx
  * @Description: 确认并发送邮件
  */
@@ -145,6 +145,7 @@ const ConfirmAndSend = (props) => {
     data: [],
     count: 0,
   });
+  const [ccList, setCcList] = useState([]);
   const [masterState, setMasterState] = useState();
   const [downloadR, setDownloadR] = useState({
     open: false,
@@ -514,17 +515,25 @@ const ConfirmAndSend = (props) => {
         </span>
       ),
       align: 'center',
-      dataIndex: 'received_name',
-      key: 'received_name',
+      dataIndex: 'Cc_Name',
+      key: 'cc_name',
       render: (text, record, index) => (
         <Input
           bordered={false}
           style={{ textAlign: 'center' }}
-          value={tabSEmail2.data[index].received_name}
+          value={tabSEmail2.data[index].Cc_Name}
+          onBlur={(e) => {
+            let v = e.target.value;
+            if (record.Cc_GUID === '') {
+              let list = ccList;
+              list[index].Cc_Name = v;
+              setCcList(list);
+            }
+          }}
           onChange={(v) => {
             setTabSEmail2(() => {
               let arr = tabSEmail2.data;
-              arr[index].received_name = v.target.value;
+              arr[index].Cc_Name = v.target.value;
               return {
                 data: arr,
                 ...tabSEmail2.count,
@@ -545,17 +554,25 @@ const ConfirmAndSend = (props) => {
         </span>
       ),
       align: 'center',
-      dataIndex: 'email',
-      key: 'email',
+      dataIndex: 'Cc_Email',
+      key: 'cc_email',
       render: (text, record, index) => (
         <Input
           bordered={false}
           style={{ textAlign: 'center' }}
-          value={tabSEmail2.data[index].email}
+          value={tabSEmail2.data[index].Cc_Email}
+          onBlur={(e) => {
+            let v = e.target.value;
+            if (record.Cc_GUID === '') {
+              let list = ccList;
+              list[index].Cc_Email = v;
+              setCcList(list);
+            }
+          }}
           onChange={(v) => {
             setTabSEmail2(() => {
               let arr = tabSEmail2.data;
-              arr[index].email = v.target.value;
+              arr[index].Cc_Email = v.target.value;
               return {
                 data: arr,
                 ...tabSEmail2.count,
@@ -573,15 +590,27 @@ const ConfirmAndSend = (props) => {
               let arrData = JSON.parse(JSON.stringify(tabSEmail2));
               arrData.data.push({
                 key: arrData.data.length,
-                object_type: '1',
-                received_name: '',
-                email: '',
+                Cc_GUID: '',
+                type: '1',
+                Cc_Name: '',
+                Cc_Email: '',
               });
 
               return {
                 data: arrData.data,
                 count: tabSEmail2.count + 1,
               };
+            });
+            setCcList(() => {
+              let arrData = tabSEmail2.data;
+              arrData.push({
+                key: arrData.length,
+                Cc_GUID: '',
+                type: 1,
+                Cc_Name: '',
+                Cc_Email: '',
+              });
+              return arrData;
             });
           }}
           style={{ cursor: 'pointer', color: '#21bb7e' }}
@@ -593,17 +622,23 @@ const ConfirmAndSend = (props) => {
       render: (_, record, index) => (
         <DeleteOutlined
           onClick={() => {
-            setTabSEmail(() => {
-              let arrData = JSON.parse(JSON.stringify(tabSEmail));
+            let list = ccList;
+            list.forEach((item, n) => {
+              if (n === index) {
+                item.type = 3;
+              }
+            });
+            setCcList(list);
+            setTabSEmail2(() => {
+              let arrData = JSON.parse(JSON.stringify(tabSEmail2));
               let arr = arrData.data.filter((item) => item.key !== record.key);
-
               arr.map((item, i) => {
                 item.key = i;
               });
 
               return {
                 data: arr,
-                count: tabSEmail.data.length - 1,
+                count: tabSEmail2.data.length - 1,
               };
             });
           }}
@@ -617,18 +652,55 @@ const ConfirmAndSend = (props) => {
     let info = {
       customerGuid: props.customerGuid,
     };
-    GetCcSettings(info).then((res) => {});
+    GetCcSettings(info).then((res) => {
+      if (res.success) {
+        let arr = [];
+        res.data.forEach((item, index) => {
+          arr.push({
+            Cc_GUID: item.Cc_GUID,
+            Cc_Name: item.Cc_Name,
+            Cc_Email: item.Cc_Email,
+            type: 0,
+            key: index,
+          });
+        });
+        setTabSEmail2(() => {
+          return {
+            data: arr,
+            count: res.data.length,
+          };
+        });
+        setCcList(() => {
+          return arr;
+        });
+      }
+    });
   }
   // 保存抄送人设置
   function saveCcSettings() {
+    console.log(ccList, 123);
+    let list = [];
+    ccList.forEach((item) => {
+      list.push({
+        cc_name: item.Cc_Name,
+        cc_email: item.Cc_Email,
+        cc_guid: item.Cc_GUID,
+        type: item.type,
+      });
+    });
+
     let info = {
-      Cc_Customer: '001',
-      cc_list: [
-        { cc_guid: '', cc_name: '', cc_email: '', type: 0 },
-        { cc_guid: '', cc_name: '', cc_email: '', type: 1 },
-      ],
+      Cc_Customer: props.customerGuid,
+      cc_list: list,
     };
-    SaveCcSettings(info).then((res) => {});
+    SaveCcSettings(info).then((res) => {
+      if (res.success) {
+        message.success(
+          intl.formatMessage({ id: 'pages.operate.success', defaultMessage: '操作成功！' }),
+        );
+        setCcSetting(false);
+      }
+    });
   }
   return (
     <>
@@ -690,7 +762,9 @@ const ConfirmAndSend = (props) => {
           />
         )}
       </Modal>
+      {/* 设置抄送人 */}
       <Modal
+        destroyOnClose
         title="设置抄送人"
         visible={ccSetting}
         onCancel={() => {
